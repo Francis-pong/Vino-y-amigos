@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vinum & Amigos (IPL) - Tienda de Vinos</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --burgundy: #6B1F3A;
+            --gold: #D4AF37;
+            --cream: #F5F1E8;
+            --dark: #2C1810;
+            --light-burgundy: #8B3952;
+            --shadow: rgba(107, 31, 58, 0.15);
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background: linear-gradient(135deg, var(--cream) 0%, #E8DCC8 100%);
+            color: var(--dark);
+            min-height: 100vh;
+        }
+
+        .grain-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' /%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' /%3E%3C/svg%3E");
+            z-index: 1000;
+        }
+
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--burgundy) 0%, var(--light-burgundy) 100%);
+            padding: 1.5rem 0;
+            box-shadow: 0 4px 20px var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gold);
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .cart-button {
+            background: var(--gold);
+            color: var(--dark);
+            border: none;
+            padding: 12px 28px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+        }
+
+        .cart-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
+            background: #E5C048;
+        }
+
+        .cart-count {
+            background: var(--burgundy);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 4rem 0 3rem;
+            animation: fadeIn 0.8s ease-out 0.3s both;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.5rem;
+            color: var(--burgundy);
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--dark);
+            opacity: 0.8;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .filters {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin: 2rem 0;
+            flex-wrap: wrap;
+            animation: fadeIn 0.8s ease-out 0.5s both;
+        }
+
+        .filter-btn {
+            background: white;
+            border: 2px solid var(--burgundy);
+            color: var(--burgundy);
+            padding: 10px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            font-family: 'Montserrat', sans-serif;
+        }
+
+        .filter-btn:hover,
+        .filter-btn.active {
+            background: var(--burgundy);
+            color: rgb(201, 37, 37);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            padding: 2rem 0;
+            animation: fadeIn 0.8s ease-out 0.7s both;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 20px var(--shadow);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-card.featured {
+            background: linear-gradient(135deg, #FFF9F0 0%, #FFFFFF 100%);
+            border: 2px solid var(--gold);
+        }
+
+        .featured-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(135deg, var(--gold), #E5C048);
+            color: var(--dark);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 2px 10px rgba(212, 175, 55, 0.4);
+            z-index: 10;
+        }
+
+        .product-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--burgundy), var(--gold));
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 8px 30px var(--shadow);
+        }
+
+        .product-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 280px;
+            background: linear-gradient(135deg, var(--cream), #E0D4C0);
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .product-card:hover .product-image img {
+            transform: scale(1.05);
+        }
+
+        .product-image::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: linear-gradient(to top, rgba(107, 31, 58, 0.2), transparent);
+            pointer-events: none;
+        }
+
+        .product-info h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            color: var(--burgundy);
+            margin-bottom: 0.5rem;
+        }
+
+        .product-type {
+            color: var(--gold);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .product-description {
+            color: var(--dark);
+            opacity: 0.7;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .product-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        .price {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--burgundy);
+            font-family: 'Playfair Display', serif;
+        }
+
+        .add-to-cart-btn {
+            background: var(--burgundy);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .add-to-cart-btn:hover {
+            background: var(--light-burgundy);
+            transform: scale(1.05);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--cream);
+        }
+
+        .modal-header h2 {
+            font-family: 'Playfair Display', serif;
+            color: var(--burgundy);
+            font-size: 2rem;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 2rem;
+            cursor: pointer;
+            color: var(--dark);
+            line-height: 1;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease;
+        }
+
+        .close-btn:hover {
+            transform: rotate(90deg);
+        }
+
+        .cart-item {
+            display: flex;
+            gap: 1rem;
+            padding: 1rem;
+            border-bottom: 1px solid var(--cream);
+            align-items: center;
+        }
+
+        .cart-item-image {
+            width: 80px;
+            height: 80px;
+            background: var(--cream);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .cart-item-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .cart-item-info {
+            flex: 1;
+        }
+
+        .cart-item-info h4 {
+            color: var(--burgundy);
+            font-family: 'Playfair Display', serif;
+            margin-bottom: 0.3rem;
+        }
+
+        .cart-item-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+
+        .quantity-btn {
+            background: var(--burgundy);
+            color: white;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+
+        .quantity-btn:hover {
+            background: var(--light-burgundy);
+            transform: scale(1.1);
+        }
+
+        .quantity {
+            font-weight: 600;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .remove-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+
+        .remove-btn:hover {
+            background: #c82333;
+        }
+
+        .cart-total {
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid var(--burgundy);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .cart-total h3 {
+            font-family: 'Playfair Display', serif;
+            color: var(--burgundy);
+            font-size: 1.5rem;
+        }
+
+        .total-price {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--burgundy);
+            font-family: 'Playfair Display', serif;
+        }
+
+        .checkout-btn {
+            width: 100%;
+            margin-top: 1.5rem;
+            background: linear-gradient(135deg, var(--burgundy), var(--light-burgundy));
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px var(--shadow);
+        }
+
+        .checkout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px var(--shadow);
+        }
+
+        .empty-cart {
+            text-align: center;
+            padding: 3rem;
+            color: var(--dark);
+            opacity: 0.6;
+        }
+
+        .empty-cart-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .order-form {
+            margin-top: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--burgundy);
+            font-weight: 600;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--cream);
+            border-radius: 10px;
+            font-family: 'Montserrat', sans-serif;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--burgundy);
+        }
+
+        .success-message {
+            background: linear-gradient(135deg, #28a745, #20c997);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .success-message h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .success-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        /* ===== TABS ===== */
+        .main-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 0;
+            margin: 2rem 0 0;
+            border-bottom: 2px solid var(--burgundy);
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 14px 36px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--dark);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: -2px;
+            letter-spacing: 0.5px;
+        }
+
+        .tab-btn:hover { color: var(--burgundy); }
+
+        .tab-btn.active {
+            color: var(--burgundy);
+            border-bottom: 3px solid var(--burgundy);
+        }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.5s ease; }
+
+        /* ===== WINE CONFIGURATOR ===== */
+        .configurator-wrap {
+            max-width: 680px;
+            margin: 0 auto;
+            padding: 40px 0 60px;
+        }
+
+        .cfg-progress {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 36px;
+        }
+
+        .cfg-dot {
+            width: 36px;
+            height: 5px;
+            border-radius: 3px;
+            background: #ddd;
+            transition: all 0.4s ease;
+        }
+
+        .cfg-dot.active { background: var(--burgundy); }
+        .cfg-dot.done { background: var(--gold); }
+
+        .cfg-step { display: none; animation: fadeIn 0.4s ease; }
+        .cfg-step.active { display: block; }
+
+        .cfg-step-num {
+            font-size: 0.72rem;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: var(--gold);
+            font-weight: 600;
+        }
+
+        .cfg-step-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.5rem, 4vw, 2rem);
+            color: var(--burgundy);
+            margin: 6px 0 8px;
+        }
+
+        .cfg-step-desc {
+            color: var(--dark);
+            opacity: 0.65;
+            font-size: 0.9rem;
+            margin-bottom: 28px;
+            line-height: 1.6;
+        }
+
+        .cfg-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+
+        .cfg-card {
+            background: white;
+            border: 2px solid #e0d4c0;
+            border-radius: 14px;
+            padding: 18px 14px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(107,31,58,0.06);
+        }
+
+        .cfg-card:hover {
+            border-color: var(--light-burgundy);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(107,31,58,0.12);
+        }
+
+        .cfg-card.selected {
+            border-color: var(--burgundy);
+            background: linear-gradient(135deg, #FFF0F4, #fff);
+            box-shadow: 0 4px 16px rgba(107,31,58,0.18);
+        }
+
+        .cfg-card-emoji { font-size: 2rem; display: block; margin-bottom: 8px; }
+        .cfg-card-name { font-weight: 600; color: var(--dark); font-size: 0.9rem; }
+        .cfg-card-note { font-size: 0.72rem; color: #888; margin-top: 4px; line-height: 1.3; }
+
+        .cfg-btn-row { display: flex; gap: 12px; }
+
+        .cfg-btn {
+            padding: 13px 26px;
+            border: none;
+            border-radius: 30px;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .cfg-btn-primary {
+            background: var(--burgundy);
+            color: white;
+            flex: 1;
+        }
+
+        .cfg-btn-primary:hover { background: var(--light-burgundy); transform: translateY(-1px); }
+        .cfg-btn-primary:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+        .cfg-btn-secondary {
+            background: transparent;
+            color: var(--burgundy);
+            border: 2px solid var(--burgundy);
+        }
+
+        .cfg-btn-secondary:hover { background: var(--cream); }
+
+        /* Result card */
+        .cfg-result-card {
+            background: white;
+            border-radius: 16px;
+            padding: 28px;
+            box-shadow: 0 5px 25px rgba(107,31,58,0.1);
+            margin-bottom: 24px;
+            border: 1px solid #e8dcc8;
+        }
+
+        .cfg-result-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            color: var(--burgundy);
+            margin-bottom: 18px;
+            font-style: italic;
+        }
+
+        .cfg-result-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0e8d8;
+            font-size: 0.9rem;
+        }
+
+        .cfg-result-row:last-child { border-bottom: none; }
+        .cfg-result-label { color: #888; }
+        .cfg-result-value { font-weight: 600; color: var(--dark); }
+
+        .cfg-highlight-row {
+            background: linear-gradient(135deg, #FFF0F4, #FFF8F0);
+            margin: 8px -28px;
+            padding: 14px 28px;
+            border: none !important;
+        }
+
+        .cfg-highlight-row .cfg-result-label { color: var(--dark); font-weight: 500; }
+        .cfg-highlight-row .cfg-result-value { color: var(--burgundy); font-size: 1rem; font-weight: 700; }
+
+        .cfg-timeline { margin: 18px 0; }
+        .cfg-timeline-labels { display: flex; justify-content: space-between; font-size: 0.72rem; color: #aaa; margin-bottom: 6px; }
+        .cfg-timeline-track { height: 7px; background: #f0e8d8; border-radius: 4px; overflow: hidden; }
+        .cfg-timeline-fill { height: 100%; background: linear-gradient(90deg, var(--burgundy), var(--gold)); border-radius: 4px; animation: cfgFill 1.2s ease forwards; width: 0; }
+        @keyframes cfgFill { to { width: var(--fw); } }
+
+        .cfg-info-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #FFF8E7;
+            border: 1px solid #e8c96e;
+            border-radius: 6px;
+            padding: 8px 14px;
+            font-size: 0.8rem;
+            color: #8a6200;
+            margin-bottom: 20px;
+        }
+
+        .cfg-confirm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .cfg-btn-accept {
+            background: linear-gradient(135deg, #2D6A4F, #40916C);
+            color: white;
+            padding: 16px;
+            font-size: 0.95rem;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .cfg-btn-accept:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+        .cfg-btn-modify {
+            background: transparent;
+            color: var(--burgundy);
+            border: 2px solid var(--burgundy);
+            padding: 16px;
+            font-size: 0.95rem;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .cfg-btn-modify:hover { background: #fff0f4; }
+
+        .cfg-success {
+            text-align: center;
+            padding: 50px 20px;
+        }
+
+        .cfg-success-icon { font-size: 4rem; display: block; margin-bottom: 16px; animation: popIn 0.5s cubic-bezier(0.175,0.885,0.32,1.275); }
+        @keyframes popIn { from { transform: scale(0); } to { transform: scale(1); } }
+
+        .cfg-success-title { font-family: 'Playfair Display', serif; font-size: 2rem; color: var(--burgundy); margin-bottom: 12px; }
+        .cfg-success-msg { color: #777; line-height: 1.7; max-width: 420px; margin: 0 auto; }
+
+        .cfg-order-id {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 22px;
+            border: 2px solid var(--gold);
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: var(--burgundy);
+            font-weight: 600;
+            letter-spacing: 0.08em;
+        }
+
+        @media (max-width: 768px) {
+            .cfg-confirm-grid { grid-template-columns: 1fr; }
+            .tab-btn { padding: 12px 14px; font-size: 0.8rem; }
+        }
+
+        /* ===== SUGERENCIAS & RESEÑAS ===== */
+        .community-wrap {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 40px 0 60px;
+        }
+        .community-header { text-align: center; margin-bottom: 36px; }
+        .community-header h2 { font-family: 'Playfair Display', serif; font-size: clamp(1.8rem,4vw,2.4rem); color: var(--burgundy); margin-bottom: 8px; }
+        .community-header p { color: var(--dark); opacity: 0.65; font-size: 0.95rem; line-height: 1.6; }
+
+        .community-form-card {
+            background: white;
+            border-radius: 18px;
+            padding: 30px;
+            box-shadow: 0 5px 25px rgba(107,31,58,0.1);
+            margin-bottom: 36px;
+            border: 1px solid #e8dcc8;
+        }
+        .community-form-card h3 { font-family: 'Playfair Display', serif; color: var(--burgundy); font-size: 1.3rem; margin-bottom: 4px; }
+        .community-form-card .subtitle { font-size: 0.82rem; color: #999; margin-bottom: 20px; }
+
+        .form-field { margin-bottom: 14px; }
+        .form-field label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--burgundy); margin-bottom: 6px; letter-spacing: 0.03em; }
+        .form-field input, .form-field textarea, .form-field select {
+            width: 100%; padding: 12px 14px; border: 2px solid #e8dcc8; border-radius: 10px;
+            font-family: 'Montserrat', sans-serif; font-size: 0.9rem; color: var(--dark);
+            background: #fdfaf6; transition: border-color 0.3s ease; resize: vertical;
+        }
+        .form-field input:focus, .form-field textarea:focus, .form-field select:focus { outline: none; border-color: var(--burgundy); background: white; }
+
+        .star-picker { display: flex; gap: 6px; margin-top: 4px; }
+        .star-btn { background: none; border: none; font-size: 1.8rem; cursor: pointer; transition: transform 0.2s ease; filter: grayscale(1); opacity: 0.35; line-height: 1; padding: 0; }
+        .star-btn.lit { filter: grayscale(0); opacity: 1; }
+        .star-btn:hover { transform: scale(1.2); }
+
+        .form-submit-btn {
+            width: 100%; padding: 14px;
+            background: linear-gradient(135deg, var(--burgundy), var(--light-burgundy));
+            color: white; border: none; border-radius: 30px;
+            font-family: 'Montserrat', sans-serif; font-size: 1rem; font-weight: 600;
+            cursor: pointer; transition: all 0.3s ease; margin-top: 6px;
+            box-shadow: 0 4px 15px var(--shadow);
+        }
+        .form-submit-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px var(--shadow); }
+        .form-submit-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        .sent-banner { text-align: center; padding: 24px; background: linear-gradient(135deg,#28a745,#20c997); color: white; border-radius: 12px; animation: fadeIn 0.5s ease; }
+        .sent-banner .sent-icon { font-size: 2.5rem; display: block; margin-bottom: 8px; }
+        .sent-banner h4 { font-family: 'Playfair Display', serif; font-size: 1.3rem; margin-bottom: 4px; }
+        .sent-banner p { opacity: 0.9; font-size: 0.9rem; }
+
+        .reviews-list { margin-top: 10px; }
+        .review-card {
+            background: white; border-radius: 14px; padding: 20px 22px; margin-bottom: 14px;
+            box-shadow: 0 2px 12px rgba(107,31,58,0.07); border-left: 4px solid var(--burgundy);
+            animation: fadeIn 0.4s ease;
+        }
+        .review-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; gap: 12px; flex-wrap: wrap; }
+        .review-author { font-weight: 600; color: var(--burgundy); font-size: 0.95rem; }
+        .review-stars { font-size: 1rem; letter-spacing: 1px; }
+        .review-type-badge { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 10px; border-radius: 20px; }
+        .badge-elogio { background: #d4edda; color: #155724; }
+        .badge-critica { background: #f8d7da; color: #721c24; }
+        .badge-neutral { background: #e2e3e5; color: #383d41; }
+        .review-text { font-size: 0.88rem; color: #555; line-height: 1.6; margin-bottom: 6px; }
+        .review-date { font-size: 0.72rem; color: #bbb; }
+        .no-reviews { text-align: center; padding: 30px; color: #bbb; font-size: 0.9rem; }
+
+        .section-divider { display: flex; align-items: center; gap: 14px; margin: 32px 0 20px; }
+        .section-divider hr { flex: 1; border: none; border-top: 1px solid #e8dcc8; }
+        .section-divider span { font-family: 'Playfair Display', serif; color: var(--burgundy); font-size: 1rem; white-space: nowrap; }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .products-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .logo {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="grain-overlay"></div>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        const wines = [
+            {
+                id: 1,
+                name: "Vinum Reserva Especial",
+                type: "Tinto",
+                price: 5000,
+                description: "Nuestra creación insignia - Un vino excepcional con cuerpo completo, notas de frutos rojos maduros y elegante final",
+                emoji: "🍷",
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRoXyWOBswFFjoY2SXWtOK7SflsBjcN-F-HQA&s"
+            },
+            {
+                id: 2,
+                name: "Reserva del Patron",
+                type: "Tinto",
+                price: 2805,
+                description: "Un vino robusto con notas de cereza negra y roble tostado",
+                emoji: "🍷",
+                image: "https://clubvalledeguadalupe.com/wp-content/uploads/2023/10/covervino.jpg"
+            },
+            {
+                id: 3,
+                name: "Chardonnay Estate",
+                type: "Blanco",
+                price: 2368,
+                description: "Elegante y fresco con toques de manzana verde y vainilla",
+                emoji: "🥂",
+                image: "https://www.lacasadelacanard.com/cdn/shop/files/Vino-Santiago-Ruiz-750-ml-Front_2048x.jpg?v=1746569926"
+            },
+            {
+                id: 4,
+                name: "Rosé de Verano",
+                type: "Rosado",
+                price: 1994,
+                description: "Frutal y refrescante, perfecto para días soleados",
+                emoji: "🍾",
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRul6HPPI8kTSCpapwAPMpZwbhJ9g-DnfaETQ&s"
+            },
+            {
+                id: 5,
+                name: "Malbec Premium",
+                type: "Tinto",
+                price: 3241,
+                description: "Intenso y aterciopelado con taninos suaves",
+                emoji: "🍷",
+                image: "https://acdn-us.mitiendanube.com/stores/001/133/349/products/regalo-malbec-premium-tienda-cd3ba2c7e40095272d17458803223740-1024-1024.webp"
+            },
+            {
+                id: 6,
+                name: "Sauvignon Blanc",
+                type: "Blanco",
+                price: 2181,
+                description: "Cítrico y vibrante con final mineral",
+                emoji: "🥂",
+                image: "https://tienda.santacatalina.cl/cdn/shop/files/2UE2DLLE2CRC1080x1080.jpg?v=1729086988"
+            },
+            {
+                id: 7,
+                name: "Cabernet Premium",
+                type: "Tinto",
+                price: 3615,
+                description: "Complejo y estructurado con gran potencial de guarda",
+                emoji: "🍷",
+                image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS49L9xDavN__6NZipZCjHp7c8vd3IF-5OaVg&s"
+            },
+            {
+                id: 8,
+                name: "Prosecco Italiano",
+                type: "Espumoso",
+                price: 2618,
+                description: "Burbujas finas y delicadas con notas florales",
+                emoji: "🍾",
+                image: "https://licorerias.com.pe/blog/wp-content/uploads/2025/01/portada-licorerias-enero-1-1200x675.png"
+            },
+            {
+                id: 9,
+                name: "Pinot Noir Reserve",
+                type: "Tinto",
+                price: 4052,
+                description: "Sedoso y elegante con aromas a frutos rojos",
+                emoji: "🍷",
+                image: "https://d31f1ehqijlcua.cloudfront.net/n/4/5/f/a/45faf0b9d50dcc4cce70670dbfa0ddb7da331920_RedWine_333830_05.jpg"
+            }
+        ];
+
+        function App() {
+            const [cart, setCart] = useState([]);
+            const [showCart, setShowCart] = useState(false);
+            const [filter, setFilter] = useState('Todos');
+            const [showCheckout, setShowCheckout] = useState(false);
+            const [orderComplete, setOrderComplete] = useState(false);
+            const [mainTab, setMainTab] = useState('tienda');
+
+            // === CONFIGURADOR ===
+            const [cfgStep, setCfgStep] = useState(1);
+            const [cfgData, setCfgData] = useState({ fruta: null, dulzor: null, alcohol: null, alcoholDays: 0, maduracion: null, maduracionDays: 30, cantidad: null, cantidadDays: 0 });
+            const [cfgDone, setCfgDone] = useState(false);
+            const [cfgResult, setCfgResult] = useState(null);
+
+            const cfgSelect = (field, value, extra) => {
+                setCfgData(prev => ({ ...prev, [field]: value, ...(extra || {}) }));
+            };
+
+            const cfgCalc = () => {
+                const fermentacion = cfgData.dulzor === 'Dulce' ? 29 : cfgData.dulzor === 'Semi-seco' ? 21 : 14;
+                const ferSec = 21 + (cfgData.alcoholDays || 0);
+                const maduracion = cfgData.maduracionDays || 30;
+                const extra = cfgData.cantidadDays || 0;
+                const total = fermentacion + ferSec + maduracion + extra;
+                const fecha = new Date();
+                fecha.setDate(fecha.getDate() + total);
+                const fechaStr = fecha.toLocaleDateString('es-DO', { day: 'numeric', month: 'long', year: 'numeric' });
+                setCfgResult({ total, fechaStr, fermentacion, ferSec, maduracion });
+                setCfgStep(6);
+            };
+
+            const cfgReset = () => {
+                setCfgStep(1);
+                setCfgData({ fruta: null, dulzor: null, alcohol: null, alcoholDays: 0, maduracion: null, maduracionDays: 30, cantidad: null, cantidadDays: 0 });
+                setCfgDone(false);
+                setCfgResult(null);
+            };
+
+            // === SUGERENCIAS ===
+            const [sugForm, setSugForm] = useState({ nombre: '', fruta: '', tipo: '', notas: '', contacto: '' });
+            const [sugSent, setSugSent] = useState(false);
+            const submitSug = () => {
+                if (!sugForm.nombre || !sugForm.notas) return;
+                setSugSent(true);
+                setTimeout(() => {
+                    setSugSent(false);
+                    setSugForm({ nombre: '', fruta: '', tipo: '', notas: '', contacto: '' });
+                }, 3500);
+            };
+
+            // === RESEÑAS ===
+            const [reviews, setReviews] = useState([
+                { id: 1, nombre: 'María G.', texto: '¡Excelente selección de vinos! El Reserva del Patron es increíble.', tipo: 'elogio', estrellas: 5, fecha: '18 feb 2026' },
+                { id: 2, nombre: 'Carlos R.', texto: 'Me gustaría ver más vinos locales del Caribe en el catálogo.', tipo: 'critica', estrellas: 3, fecha: '15 feb 2026' },
+            ]);
+            const [revForm, setRevForm] = useState({ nombre: '', texto: '', tipo: 'elogio', estrellas: 0 });
+            const [revSent, setRevSent] = useState(false);
+            const submitRev = () => {
+                if (!revForm.nombre || !revForm.texto || revForm.estrellas === 0) return;
+                const now = new Date().toLocaleDateString('es-DO', { day: 'numeric', month: 'short', year: 'numeric' });
+                setReviews(prev => [{ ...revForm, id: Date.now(), fecha: now }, ...prev]);
+                setRevSent(true);
+                setRevForm({ nombre: '', texto: '', tipo: 'elogio', estrellas: 0 });
+                setTimeout(() => setRevSent(false), 3000);
+            };
+
+            const [customerInfo, setCustomerInfo] = useState({
+                name: '',
+                email: '',
+                phone: '',
+                address: ''
+            });
+
+            const addToCart = (wine) => {
+                const existingItem = cart.find(item => item.id === wine.id);
+                if (existingItem) {
+                    setCart(cart.map(item => 
+                        item.id === wine.id 
+                            ? { ...item, quantity: item.quantity + 1 }
+                            : item
+                    ));
+                } else {
+                    setCart([...cart, { ...wine, quantity: 1 }]);
+                }
+            };
+
+            const updateQuantity = (id, delta) => {
+                setCart(cart.map(item => 
+                    item.id === id 
+                        ? { ...item, quantity: Math.max(0, item.quantity + delta) }
+                        : item
+                ).filter(item => item.quantity > 0));
+            };
+
+            const removeFromCart = (id) => {
+                setCart(cart.filter(item => item.id !== id));
+            };
+
+            const getTotal = () => {
+                return cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            };
+
+            const handleCheckout = (e) => {
+                e.preventDefault();
+                setOrderComplete(true);
+                setTimeout(() => {
+                    setOrderComplete(false);
+                    setShowCheckout(false);
+                    setShowCart(false);
+                    setCart([]);
+                    setCustomerInfo({ name: '', email: '', phone: '', address: '' });
+                }, 3000);
+            };
+
+            const filteredWines = filter === 'Todos' 
+                ? wines 
+                : wines.filter(wine => wine.type === filter);
+
+            const types = ['Todos', ...new Set(wines.map(w => w.type))];
+
+            return (
+                <>
+                    <header>
+                        <div className="header-content">
+                            <div className="logo">VINUM & AMIGOS</div>
+                            <button className="cart-button" onClick={() => setShowCart(true)}>
+                                🛒 Carrito
+                                {cart.length > 0 && (
+                                    <span className="cart-count">{cart.length}</span>
+                                )}
+                            </button>
+                        </div>
+                    </header>
+
+                    <div className="app-container">
+                        <div className="hero">
+                            <h1>Vinum & Amigos</h1>
+                            <p>Instituto Politécnico Loyola - Vinos selectos para cada ocasión</p>
+                        </div>
+
+                        {/* TABS */}
+                        <div className="main-tabs">
+                            <button className={`tab-btn ${mainTab === 'tienda' ? 'active' : ''}`} onClick={() => setMainTab('tienda')}>
+                                🍷 Nuestra Tienda
+                            </button>
+                            <button className={`tab-btn ${mainTab === 'personalizado' ? 'active' : ''}`} onClick={() => setMainTab('personalizado')}>
+                                ✨ Crea tu Vino
+                            </button>
+                            <button className={`tab-btn ${mainTab === 'sugerencias' ? 'active' : ''}`} onClick={() => setMainTab('sugerencias')}>
+                                💡 Sugerencias
+                            </button>
+                            <button className={`tab-btn ${mainTab === 'resenas' ? 'active' : ''}`} onClick={() => setMainTab('resenas')}>
+                                ⭐ Reseñas
+                            </button>
+                        </div>
+
+                        {/* ===== TIENDA ===== */}
+                        <div className={`tab-content ${mainTab === 'tienda' ? 'active' : ''}`}>
+                        <div className="filters">
+                            {types.map(type => (
+                                <button
+                                    key={type}
+                                    className={`filter-btn ${filter === type ? 'active' : ''}`}
+                                    onClick={() => setFilter(type)}
+                                >
+                                    {type}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="products-grid">
+                            {filteredWines.map(wine => (
+                                <div key={wine.id} className={`product-card ${wine.id === 1 ? 'featured' : ''}`}>
+                                    {wine.id === 1 && (
+                                        <div className="featured-badge">⭐ Destacado</div>
+                                    )}
+                                    <div className="product-image">
+                                        <img src={wine.image} alt={wine.name} />
+                                    </div>
+                                    <div className="product-info">
+                                        <div className="product-type">{wine.type}</div>
+                                        <h3>{wine.name}</h3>
+                                        <p className="product-description">{wine.description}</p>
+                                        <div className="product-footer">
+                                            <span className="price">${wine.price}</span>
+                                            <button 
+                                                className="add-to-cart-btn"
+                                                onClick={() => addToCart(wine)}
+                                            >
+                                                Agregar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        </div>
+
+                        {/* ===== CONFIGURADOR ===== */}
+                        <div className={`tab-content ${mainTab === 'personalizado' ? 'active' : ''}`}>
+                          <div className="configurator-wrap">
+
+                            {/* Progress dots */}
+                            <div className="cfg-progress">
+                              {[1,2,3,4,5].map(n => (
+                                <div key={n} className={`cfg-dot ${cfgStep === n ? 'active' : cfgStep > n ? 'done' : ''}`}></div>
+                              ))}
+                            </div>
+
+                            {/* Step 1: Fruta */}
+                            <div className={`cfg-step ${cfgStep === 1 ? 'active' : ''}`}>
+                              <p className="cfg-step-num">Paso 1 de 5</p>
+                              <h2 className="cfg-step-title">¿Con qué fruta deseas tu vino?</h2>
+                              <p className="cfg-step-desc">La fruta define el perfil aromático base de tu vino artesanal.</p>
+                              <div className="cfg-options">
+                                {[['🍇','Uva','Clásico, intenso'],['🍎','Manzana','Fresco, suave'],['🍍','Piña','Tropical, dulce'],['🍓','Fresa','Afrutado, delicado'],['🍑','Durazno','Floral, meloso']].map(([emoji, nombre, nota]) => (
+                                  <div key={nombre} className={`cfg-card ${cfgData.fruta === nombre ? 'selected' : ''}`} onClick={() => cfgSelect('fruta', nombre)}>
+                                    <span className="cfg-card-emoji">{emoji}</span>
+                                    <div className="cfg-card-name">{nombre}</div>
+                                    <div className="cfg-card-note">{nota}</div>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="cfg-btn-row">
+                                <button className="cfg-btn cfg-btn-primary" disabled={!cfgData.fruta} onClick={() => setCfgStep(2)}>Continuar →</button>
+                              </div>
+                            </div>
+
+                            {/* Step 2: Dulzor */}
+                            <div className={`cfg-step ${cfgStep === 2 ? 'active' : ''}`}>
+                              <p className="cfg-step-num">Paso 2 de 5</p>
+                              <h2 className="cfg-step-title">Nivel de dulzor</h2>
+                              <p className="cfg-step-desc">Más azúcar implica mayor alcohol potencial o más tiempo de fermentación.</p>
+                              <div className="cfg-options" style={{gridTemplateColumns:'repeat(3,1fr)'}}>
+                                {[['🍷','Seco','Fermentación completa. Sin azúcar residual.'],['🫙','Semi-seco','Equilibrio acidez-dulzor.'],['🍯','Dulce','Azúcar residual. +15 días fermentación.']].map(([emoji, nombre, nota]) => (
+                                  <div key={nombre} className={`cfg-card ${cfgData.dulzor === nombre ? 'selected' : ''}`} onClick={() => cfgSelect('dulzor', nombre)}>
+                                    <span className="cfg-card-emoji">{emoji}</span>
+                                    <div className="cfg-card-name">{nombre}</div>
+                                    <div className="cfg-card-note">{nota}</div>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="cfg-btn-row">
+                                <button className="cfg-btn cfg-btn-secondary" onClick={() => setCfgStep(1)}>← Atrás</button>
+                                <button className="cfg-btn cfg-btn-primary" disabled={!cfgData.dulzor} onClick={() => setCfgStep(3)}>Continuar →</button>
+                              </div>
+                            </div>
+
+                            {/* Step 3: Alcohol */}
+                            <div className={`cfg-step ${cfgStep === 3 ? 'active' : ''}`}>
+                              <p className="cfg-step-num">Paso 3 de 5</p>
+                              <h2 className="cfg-step-title">Grado alcohólico deseado</h2>
+                              <p className="cfg-step-desc">Mayor graduación requiere más tiempo de fermentación controlada.</p>
+                              <div className="cfg-options" style={{gridTemplateColumns:'repeat(3,1fr)'}}>
+                                {[['💧','Bajo (6–8%)','Ligero y refrescante.',0],['🌊','Medio (9–11%)','Equilibrado. +10 días.',10],['🔥','Alto (12–14%)','Intenso. +21 días.',21]].map(([emoji, nombre, nota, dias]) => (
+                                  <div key={nombre} className={`cfg-card ${cfgData.alcohol === nombre ? 'selected' : ''}`} onClick={() => cfgSelect('alcohol', nombre, {alcoholDays: dias})}>
+                                    <span className="cfg-card-emoji">{emoji}</span>
+                                    <div className="cfg-card-name">{nombre}</div>
+                                    <div className="cfg-card-note">{nota}</div>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="cfg-btn-row">
+                                <button className="cfg-btn cfg-btn-secondary" onClick={() => setCfgStep(2)}>← Atrás</button>
+                                <button className="cfg-btn cfg-btn-primary" disabled={!cfgData.alcohol} onClick={() => setCfgStep(4)}>Continuar →</button>
+                              </div>
+                            </div>
+
+                            {/* Step 4: Maduración */}
+                            <div className={`cfg-step ${cfgStep === 4 ? 'active' : ''}`}>
+                              <p className="cfg-step-num">Paso 4 de 5</p>
+                              <h2 className="cfg-step-title">Tiempo de maduración</h2>
+                              <p className="cfg-step-desc">La maduración desarrolla complejidad y suavidad en el vino.</p>
+                              <div className="cfg-options" style={{gridTemplateColumns:'repeat(3,1fr)'}}>
+                                {[['⚡','Joven','30 días. Fresco y frutal.',30],['⏳','Media','60 días. Mejor equilibrio.',60],['🏆','Larga','120 días. Máxima complejidad.',120]].map(([emoji, nombre, nota, dias]) => (
+                                  <div key={nombre} className={`cfg-card ${cfgData.maduracion === nombre ? 'selected' : ''}`} onClick={() => cfgSelect('maduracion', nombre, {maduracionDays: dias})}>
+                                    <span className="cfg-card-emoji">{emoji}</span>
+                                    <div className="cfg-card-name">{nombre}</div>
+                                    <div className="cfg-card-note">{nota}</div>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="cfg-btn-row">
+                                <button className="cfg-btn cfg-btn-secondary" onClick={() => setCfgStep(3)}>← Atrás</button>
+                                <button className="cfg-btn cfg-btn-primary" disabled={!cfgData.maduracion} onClick={() => setCfgStep(5)}>Continuar →</button>
+                              </div>
+                            </div>
+
+                            {/* Step 5: Cantidad */}
+                            <div className={`cfg-step ${cfgStep === 5 ? 'active' : ''}`}>
+                              <p className="cfg-step-num">Paso 5 de 5</p>
+                              <h2 className="cfg-step-title">Cantidad solicitada</h2>
+                              <p className="cfg-step-desc">Grandes volúmenes requieren más tiempo de estabilización.</p>
+                              <div className="cfg-options" style={{gridTemplateColumns:'repeat(3,1fr)'}}>
+                                {[['🍾','750 ml','Botella estándar.',0],['🫗','1 litro','+5 días estabilización.',5],['🛢️','5 litros','+14 días. Ideal para eventos.',14]].map(([emoji, nombre, nota, dias]) => (
+                                  <div key={nombre} className={`cfg-card ${cfgData.cantidad === nombre ? 'selected' : ''}`} onClick={() => cfgSelect('cantidad', nombre, {cantidadDays: dias})}>
+                                    <span className="cfg-card-emoji">{emoji}</span>
+                                    <div className="cfg-card-name">{nombre}</div>
+                                    <div className="cfg-card-note">{nota}</div>
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="cfg-btn-row">
+                                <button className="cfg-btn cfg-btn-secondary" onClick={() => setCfgStep(4)}>← Atrás</button>
+                                <button className="cfg-btn cfg-btn-primary" disabled={!cfgData.cantidad} onClick={cfgCalc}>Ver mi vino →</button>
+                              </div>
+                            </div>
+
+                            {/* Step 6: Resultado */}
+                            {cfgStep === 6 && !cfgDone && cfgResult && (
+                              <div className="cfg-step active">
+                                <p className="cfg-step-num">Tu vino personalizado</p>
+                                <h2 className="cfg-step-title">Resumen de elaboración</h2>
+                                <div className="cfg-info-tag">🧪 Cálculo generado por nuestro sistema de estimación artesanal</div>
+                                <div className="cfg-result-card">
+                                  <p className="cfg-result-title">Vino de {cfgData.fruta} — {cfgData.dulzor}</p>
+                                  <div className="cfg-result-row"><span className="cfg-result-label">Fruta base</span><span className="cfg-result-value">{cfgData.fruta}</span></div>
+                                  <div className="cfg-result-row"><span className="cfg-result-label">Nivel de dulzor</span><span className="cfg-result-value">{cfgData.dulzor}</span></div>
+                                  <div className="cfg-result-row"><span className="cfg-result-label">Grado alcohólico</span><span className="cfg-result-value">{cfgData.alcohol}</span></div>
+                                  <div className="cfg-result-row"><span className="cfg-result-label">Maduración</span><span className="cfg-result-value">{cfgData.maduracion}</span></div>
+                                  <div className="cfg-result-row"><span className="cfg-result-label">Cantidad</span><span className="cfg-result-value">{cfgData.cantidad}</span></div>
+                                  <div className="cfg-timeline">
+                                    <div className="cfg-timeline-labels"><span>Inicio elaboración</span><span>{cfgResult.total} días totales</span></div>
+                                    <div className="cfg-timeline-track">
+                                      <div className="cfg-timeline-fill" style={{'--fw': Math.min(100, (cfgResult.total / 180) * 100) + '%'}}></div>
+                                    </div>
+                                    <div style={{display:'flex',justifyContent:'space-between',fontSize:'0.7rem',color:'#aaa',marginTop:'5px'}}>
+                                      <span>Fermentación</span><span>Maduración</span><span>Entrega</span>
+                                    </div>
+                                  </div>
+                                  <div className="cfg-result-row cfg-highlight-row">
+                                    <span className="cfg-result-label">📅 Fecha estimada de entrega</span>
+                                    <span className="cfg-result-value">{cfgResult.fechaStr}</span>
+                                  </div>
+                                </div>
+                                <p style={{fontSize:'0.8rem',color:'#999',marginBottom:'16px',fontStyle:'italic'}}>
+                                  * La fecha es estimada. Factores climáticos y de producción pueden variar el tiempo final.
+                                </p>
+                                <div className="cfg-confirm-grid">
+                                  <button className="cfg-btn-accept" onClick={() => setCfgDone(true)}>✅ Sí, deseo continuar</button>
+                                  <button className="cfg-btn-modify" onClick={cfgReset}>🔄 Modificar selección</button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Step 7: Éxito */}
+                            {cfgDone && (
+                              <div className="cfg-step active">
+                                <div className="cfg-success">
+                                  <span className="cfg-success-icon">🍾</span>
+                                  <h2 className="cfg-success-title">¡Pedido Registrado!</h2>
+                                  <p className="cfg-success-msg">Tu vino personalizado de <strong>{cfgData.fruta}</strong> ha sido registrado. Nos pondremos en contacto contigo pronto para coordinar los detalles.</p>
+                                  <div className="cfg-order-id">Orden #{Math.floor(Math.random() * 90000) + 10000}</div>
+                                  <br/><br/>
+                                  <button className="cfg-btn cfg-btn-secondary" style={{marginTop:'16px'}} onClick={cfgReset}>Crear otro vino</button>
+                                </div>
+                              </div>
+                            )}
+
+                          </div>
+                        </div>
+
+                        {/* ===== SUGERENCIAS ===== */}
+                        <div className={`tab-content ${mainTab === 'sugerencias' ? 'active' : ''}`}>
+                          <div className="community-wrap">
+                            <div className="community-header">
+                              <h2>💡 Sugiere tu Vino Ideal</h2>
+                              <p>¿Tienes una idea para un vino que nos gustaría elaborar? Cuéntanos tu visión y lo consideraremos en nuestra próxima producción artesanal.</p>
+                            </div>
+
+                            <div className="community-form-card">
+                              <h3>Comparte tu idea</h3>
+                              <p className="subtitle">Tu sugerencia será revisada por nuestro equipo de producción</p>
+
+                              {sugSent ? (
+                                <div className="sent-banner">
+                                  <span className="sent-icon">🍇</span>
+                                  <h4>¡Gracias por tu idea!</h4>
+                                  <p>Tu sugerencia ha sido enviada. La revisaremos con mucho cariño.</p>
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="form-field">
+                                    <label>Tu nombre *</label>
+                                    <input type="text" placeholder="Ej. Ana Pérez" value={sugForm.nombre} onChange={e => setSugForm({...sugForm, nombre: e.target.value})} />
+                                  </div>
+                                  <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'14px'}}>
+                                    <div className="form-field">
+                                      <label>Fruta base preferida</label>
+                                      <select value={sugForm.fruta} onChange={e => setSugForm({...sugForm, fruta: e.target.value})}>
+                                        <option value="">-- Selecciona --</option>
+                                        <option>Uva 🍇</option>
+                                        <option>Manzana 🍎</option>
+                                        <option>Piña 🍍</option>
+                                        <option>Fresa 🍓</option>
+                                        <option>Durazno 🍑</option>
+                                        <option>Otra / combinación</option>
+                                      </select>
+                                    </div>
+                                    <div className="form-field">
+                                      <label>Tipo de vino que imaginas</label>
+                                      <select value={sugForm.tipo} onChange={e => setSugForm({...sugForm, tipo: e.target.value})}>
+                                        <option value="">-- Selecciona --</option>
+                                        <option>Seco y ligero</option>
+                                        <option>Semi-dulce afrutado</option>
+                                        <option>Dulce y aromático</option>
+                                        <option>Espumoso</option>
+                                        <option>Rosado</option>
+                                      </select>
+                                    </div>
+                                  </div>
+                                  <div className="form-field">
+                                    <label>Describe tu idea de vino *</label>
+                                    <textarea rows="5" placeholder="Ej: Me gustaría un vino de fresa con notas de vainilla, semi-dulce, que sea perfecto para una cena romántica. Sería genial si pudieran añadir un toque de cardamomo..." value={sugForm.notas} onChange={e => setSugForm({...sugForm, notas: e.target.value})} />
+                                  </div>
+                                  <div className="form-field">
+                                    <label>Correo o teléfono (opcional, para notificarte si la producimos)</label>
+                                    <input type="text" placeholder="📧 tuemail@ejemplo.com  ó  📱 809-xxx-xxxx" value={sugForm.contacto} onChange={e => setSugForm({...sugForm, contacto: e.target.value})} />
+                                  </div>
+                                  <button className="form-submit-btn" disabled={!sugForm.nombre || !sugForm.notas} onClick={submitSug}>
+                                    🍷 Enviar mi sugerencia
+                                  </button>
+                                </>
+                              )}
+                            </div>
+
+                            <div style={{background:'white',borderRadius:'14px',padding:'22px 28px',border:'1px solid #e8dcc8',opacity:0.85}}>
+                              <p style={{fontSize:'0.85rem',color:'#888',lineHeight:'1.7'}}>
+                                🌿 <strong style={{color:'var(--burgundy)'}}>¿Sabías que?</strong> Todos nuestros vinos artesanales son elaborados en pequeñas tandas en el Instituto Politécnico Loyola. Tu idea podría convertirse en la próxima edición especial de Vinum & Amigos.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* ===== RESEÑAS ===== */}
+                        <div className={`tab-content ${mainTab === 'resenas' ? 'active' : ''}`}>
+                          <div className="community-wrap">
+                            <div className="community-header">
+                              <h2>⭐ Opiniones de la Comunidad</h2>
+                              <p>Dinos qué piensas de Vinum & Amigos. Tu opinión nos ayuda a mejorar y motiva a nuestro equipo.</p>
+                            </div>
+
+                            <div className="community-form-card">
+                              <h3>Deja tu reseña</h3>
+                              <p className="subtitle">¿Elogio, crítica constructiva o simplemente quieres contarnos algo? ¡Todo es bienvenido!</p>
+
+                              {revSent ? (
+                                <div className="sent-banner">
+                                  <span className="sent-icon">✨</span>
+                                  <h4>¡Gracias por tu opinión!</h4>
+                                  <p>Tu reseña ya es visible para toda la comunidad.</p>
+                                </div>
+                              ) : (
+                                <>
+                                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'14px'}}>
+                                    <div className="form-field">
+                                      <label>Tu nombre *</label>
+                                      <input type="text" placeholder="Ej. Luis M." value={revForm.nombre} onChange={e => setRevForm({...revForm, nombre: e.target.value})} />
+                                    </div>
+                                    <div className="form-field">
+                                      <label>Tipo de opinión</label>
+                                      <select value={revForm.tipo} onChange={e => setRevForm({...revForm, tipo: e.target.value})}>
+                                        <option value="elogio">🌟 Elogio</option>
+                                        <option value="critica">📝 Crítica constructiva</option>
+                                        <option value="neutral">💬 Comentario general</option>
+                                      </select>
+                                    </div>
+                                  </div>
+                                  <div className="form-field">
+                                    <label>Calificación *</label>
+                                    <div className="star-picker">
+                                      {[1,2,3,4,5].map(n => (
+                                        <button key={n} className={`star-btn ${revForm.estrellas >= n ? 'lit' : ''}`} onClick={() => setRevForm({...revForm, estrellas: n})}>⭐</button>
+                                      ))}
+                                      {revForm.estrellas > 0 && <span style={{alignSelf:'center',fontSize:'0.8rem',color:'#888',marginLeft:'8px'}}>{['','Muy malo','Malo','Regular','Bueno','Excelente'][revForm.estrellas]}</span>}
+                                    </div>
+                                  </div>
+                                  <div className="form-field">
+                                    <label>Tu comentario *</label>
+                                    <textarea rows="4" placeholder="Cuéntanos tu experiencia con nuestros vinos, el servicio, la selección de productos, o cualquier cosa que quieras compartir..." value={revForm.texto} onChange={e => setRevForm({...revForm, texto: e.target.value})} />
+                                  </div>
+                                  <button className="form-submit-btn" disabled={!revForm.nombre || !revForm.texto || revForm.estrellas === 0} onClick={submitRev}>
+                                    ⭐ Publicar reseña
+                                  </button>
+                                </>
+                              )}
+                            </div>
+
+                            <div className="section-divider">
+                              <hr/><span>Opiniones de la comunidad ({reviews.length})</span><hr/>
+                            </div>
+
+                            <div className="reviews-list">
+                              {reviews.length === 0 ? (
+                                <div className="no-reviews">Aún no hay reseñas. ¡Sé el primero!</div>
+                              ) : reviews.map(r => (
+                                <div key={r.id} className="review-card">
+                                  <div className="review-top">
+                                    <div>
+                                      <div className="review-author">{r.nombre}</div>
+                                      <div className="review-stars">{'⭐'.repeat(r.estrellas)}{'☆'.repeat(5 - r.estrellas)}</div>
+                                    </div>
+                                    <span className={`review-type-badge ${r.tipo === 'elogio' ? 'badge-elogio' : r.tipo === 'critica' ? 'badge-critica' : 'badge-neutral'}`}>
+                                      {r.tipo === 'elogio' ? '🌟 Elogio' : r.tipo === 'critica' ? '📝 Crítica' : '💬 Comentario'}
+                                    </span>
+                                  </div>
+                                  <p className="review-text">{r.texto}</p>
+                                  <div className="review-date">📅 {r.fecha}</div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                    </div>
+
+                    <footer style={{
+                        background: 'linear-gradient(135deg, var(--burgundy) 0%, var(--light-burgundy) 100%)',
+                        color: 'white',
+                        padding: '3rem 0 2rem',
+                        marginTop: '4rem',
+                        textAlign: 'center'
+                    }}>
+                        <div className="app-container">
+                            <h3 style={{
+                                fontFamily: 'Playfair Display, serif',
+                                fontSize: '2rem',
+                                marginBottom: '1rem',
+                                color: 'var(--gold)'
+                            }}>
+                                Vinum & Amigos
+                            </h3>
+                            <p style={{marginBottom: '1rem', opacity: '0.9', fontSize: '1.1rem'}}>
+                                Instituto Politécnico Loyola (IPL)
+                            </p>
+                            <p style={{
+                                fontSize: '1.1rem',
+                                fontWeight: '600',
+                                marginBottom: '0.5rem'
+                            }}>
+                                📧 vinumyamigos@ipl.edu.do
+                            </p>
+                            <p style={{opacity: '0.8', fontSize: '0.9rem', marginTop: '2rem'}}>
+                                © 2026 Vinum & Amigos - IPL - Todos los derechos reservados
+                            </p>
+                        </div>
+                    </footer>
+
+                    {showCart && (
+                        <div className="modal-overlay" onClick={() => setShowCart(false)}>
+                            <div className="modal" onClick={e => e.stopPropagation()}>
+                                <div className="modal-header">
+                                    <h2>Tu Carrito</h2>
+                                    <button className="close-btn" onClick={() => setShowCart(false)}>×</button>
+                                </div>
+
+                                {cart.length === 0 ? (
+                                    <div className="empty-cart">
+                                        <div className="empty-cart-icon">🛒</div>
+                                        <p>Tu carrito está vacío</p>
+                                    </div>
+                                ) : showCheckout ? (
+                                    orderComplete ? (
+                                        <div className="success-message">
+                                            <div className="success-icon">✓</div>
+                                            <h3>¡Pedido Recibido!</h3>
+                                            <p>Gracias por tu compra. Te contactaremos pronto.</p>
+                                            <p>Número de orden: #{Math.floor(Math.random() * 10000)}</p>
+                                        </div>
+                                    ) : (
+                                        <form className="order-form" onSubmit={handleCheckout}>
+                                            <h3 style={{marginBottom: '1rem', color: 'var(--burgundy)', fontFamily: 'Playfair Display'}}>Información de Entrega</h3>
+                                            
+                                            <div className="form-group">
+                                                <label>Nombre Completo *</label>
+                                                <input 
+                                                    type="text" 
+                                                    required
+                                                    value={customerInfo.name}
+                                                    onChange={e => setCustomerInfo({...customerInfo, name: e.target.value})}
+                                                />
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label>Email *</label>
+                                                <input 
+                                                    type="email" 
+                                                    required
+                                                    value={customerInfo.email}
+                                                    onChange={e => setCustomerInfo({...customerInfo, email: e.target.value})}
+                                                />
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label>Teléfono *</label>
+                                                <input 
+                                                    type="tel" 
+                                                    required
+                                                    value={customerInfo.phone}
+                                                    onChange={e => setCustomerInfo({...customerInfo, phone: e.target.value})}
+                                                />
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label>Dirección de Entrega *</label>
+                                                <textarea 
+                                                    rows="3" 
+                                                    required
+                                                    value={customerInfo.address}
+                                                    onChange={e => setCustomerInfo({...customerInfo, address: e.target.value})}
+                                                ></textarea>
+                                            </div>
+
+                                            <div className="cart-total">
+                                                <h3>Total:</h3>
+                                                <span className="total-price">${getTotal()}</span>
+                                            </div>
+
+                                            <button type="submit" className="checkout-btn">
+                                                Confirmar Pedido
+                                            </button>
+
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setShowCheckout(false)}
+                                                style={{
+                                                    width: '100%',
+                                                    marginTop: '0.5rem',
+                                                    background: 'transparent',
+                                                    color: 'var(--burgundy)',
+                                                    border: '2px solid var(--burgundy)',
+                                                    padding: '12px',
+                                                    borderRadius: '30px',
+                                                    cursor: 'pointer',
+                                                    fontWeight: '600'
+                                                }}
+                                            >
+                                                Volver al Carrito
+                                            </button>
+                                        </form>
+                                    )
+                                ) : (
+                                    <>
+                                        {cart.map(item => (
+                                            <div key={item.id} className="cart-item">
+                                                <div className="cart-item-image">
+                                                    <img src={item.image} alt={item.name} />
+                                                </div>
+                                                <div className="cart-item-info">
+                                                    <h4>{item.name}</h4>
+                                                    <p style={{color: 'var(--gold)', fontSize: '0.9rem'}}>${item.price} c/u</p>
+                                                    <div className="cart-item-controls">
+                                                        <button 
+                                                            className="quantity-btn"
+                                                            onClick={() => updateQuantity(item.id, -1)}
+                                                        >
+                                                            −
+                                                        </button>
+                                                        <span className="quantity">{item.quantity}</span>
+                                                        <button 
+                                                            className="quantity-btn"
+                                                            onClick={() => updateQuantity(item.id, 1)}
+                                                        >
+                                                            +
+                                                        </button>
+                                                        <button 
+                                                            className="remove-btn"
+                                                            onClick={() => removeFromCart(item.id)}
+                                                        >
+                                                            Eliminar
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div style={{fontWeight: '700', color: 'var(--burgundy)', fontSize: '1.2rem'}}>
+                                                    ${item.price * item.quantity}
+                                                </div>
+                                            </div>
+                                        ))}
+
+                                        <div className="cart-total">
+                                            <h3>Total:</h3>
+                                            <span className="total-price">${getTotal()}</span>
+                                        </div>
+
+                                        <button 
+                                            className="checkout-btn"
+                                            onClick={() => setShowCheckout(true)}
+                                        >
+                                            Proceder al Checkout
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
